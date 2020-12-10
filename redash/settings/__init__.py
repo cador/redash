@@ -28,8 +28,12 @@ STATSD_PREFIX = os.environ.get("REDASH_STATSD_PREFIX", "redash")
 STATSD_USE_TAGS = parse_boolean(os.environ.get("REDASH_STATSD_USE_TAGS", "false"))
 
 # Connection settings for Redash's own database (where we store the queries, results, etc)
+redash_host = os.getenv('pg_host', 'pg_db')
+redash_user = os.getenv('pg_user', 'redash')
+redash_pwd = os.getenv('pg_pwd', '9ikejisxopw')
+redash_dbname = os.getenv('pg_dbname', 'redash')
 SQLALCHEMY_DATABASE_URI = os.environ.get(
-    "REDASH_DATABASE_URL", os.environ.get("DATABASE_URL", "postgresql:///postgres")
+    "REDASH_DATABASE_URL", os.environ.get("DATABASE_URL", f"postgresql://{redash_user}:{redash_pwd}@{redash_host}/{redash_dbname}")
 )
 SQLALCHEMY_MAX_OVERFLOW = int_or_none(os.environ.get("SQLALCHEMY_MAX_OVERFLOW"))
 SQLALCHEMY_POOL_SIZE = int_or_none(os.environ.get("SQLALCHEMY_POOL_SIZE"))
