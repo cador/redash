@@ -22,6 +22,7 @@ RUN useradd --create-home redash
 RUN apt-get update && \
   apt-get install -y \
     redis \
+    net-tools \
     curl \
     gnupg \
     build-essential \

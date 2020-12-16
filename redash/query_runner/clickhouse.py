@@ -134,6 +134,14 @@ class ClickHouse(BaseSQLQueryRunner):
             return TYPE_STRING
 
     def _clickhouse_query(self, query):
+        # SELECT database, table, name FROM system.columns WHERE database NOT IN ('system')
+        # /* Username: youhaolin@joyient.com, Query ID: 1, Queue: queries,
+        #       Job ID: e254c512-efaa-4a57-aa41-ffb6b863b1d3, Query Hash: 3275e1530f1de27da8b524313b80a962,
+        #       Scheduled: False */ select * from dws.dws_api_delivery limit 200
+        # 以/*开始时，需要进行解密
+        if query.startswith('/* Username:'):
+            real_sql_encrypt = re.sub(r'/\*((?!\*).)*\*/', '', query, 1)
+            print("===real_sql===>", real_sql_encrypt)
         query += "\nFORMAT JSON"
         result = self._send_query(query)
         columns = []

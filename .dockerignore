@@ -1,6 +1,7 @@
 client/.tmp/
 client/dist/
 node_modules/
+docker/
 viz-lib/node_modules/
 .tmp/
 .venv/
