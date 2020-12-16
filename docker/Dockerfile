@@ -1,11 +1,5 @@
 FROM node:12 as frontend-builder
 
-# Controls whether to build the frontend assets
-ARG skip_frontend_build
-
-ENV CYPRESS_INSTALL_BINARY=0
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
-
 RUN useradd -m -d /frontend redash
 USER redash
 
@@ -13,29 +7,21 @@ WORKDIR /frontend
 COPY --chown=redash package.json package-lock.json /frontend/
 COPY --chown=redash viz-lib /frontend/viz-lib
 
-# Controls whether to instrument code for coverage information
-ARG code_coverage
-ENV BABEL_ENV=${code_coverage:+test}
-
-RUN if [ "x$skip_frontend_build" = "x" ] ; then npm ci --unsafe-perm; fi
+RUN npm ci --unsafe-perm
 
 COPY --chown=redash client /frontend/client
 COPY --chown=redash webpack.config.js /frontend/
-RUN if [ "x$skip_frontend_build" = "x" ] ; then npm run build; else mkdir -p /frontend/client/dist && touch /frontend/client/dist/multi_org.html && touch /frontend/client/dist/index.html; fi
+RUN npm run build
 FROM python:3.7-slim
 
 EXPOSE 5000
-
-# Controls whether to install extra dependencies needed for all data sources.
-ARG skip_ds_deps
-# Controls whether to install dev dependencies.
-ARG skip_dev_deps
 
 RUN useradd --create-home redash
 
 # Ubuntu packages
 RUN apt-get update && \
   apt-get install -y \
+    redis \
     curl \
     gnupg \
     build-essential \
@@ -82,15 +68,16 @@ ENV PIP_NO_CACHE_DIR=1
 # We first copy only the requirements file, to avoid rebuilding on every file
 # change.
 COPY requirements.txt requirements_bundles.txt requirements_dev.txt requirements_all_ds.txt ./
-RUN if [ "x$skip_dev_deps" = "x" ] ; then pip install -r requirements.txt -r requirements_dev.txt; else pip install -r requirements.txt; fi
-RUN if [ "x$skip_ds_deps" = "x" ] ; then pip install -r requirements_all_ds.txt ; else echo "Skipping pip install -r requirements_all_ds.txt" ; fi
+RUN pip install -r requirements.txt
+#RUN pip install -r requirements.txt -r requirements_dev.txt
+#RUN pip install -r requirements_all_ds.txt
 
-COPY . /app
+#COPY . /app
 COPY --from=frontend-builder /frontend/client/dist /app/client/dist
 RUN chown -R redash /app
 USER redash
-
-ENTRYPOINT ["/app/bin/docker-entrypoint"]
-CMD ["server"]
+#
+#ENTRYPOINT ["/app/bin/docker-entrypoint"]
+#CMD ["server"]
 
 # docker build -t cadorai:5001/redash:base .
