@@ -2,9 +2,6 @@ import os
 import importlib
 from funcy import distinct, remove
 from flask_talisman import talisman
-import socket
-import fcntl
-import struct
 
 from .helpers import (
     fix_assets_path,
@@ -16,15 +13,9 @@ from .helpers import (
 )
 from .organization import DATE_FORMAT, TIME_FORMAT  # noqa
 
-
-def get_ip_address(ifname):
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    return socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', ifname[:15]))[20:24])
-
-
 # _REDIS_URL is the unchanged REDIS_URL we get from env vars, to be used later with RQ
 _REDIS_URL = os.environ.get(
-    "REDASH_REDIS_URL", os.environ.get("REDIS_URL", "redis://{ip}:6379/0".format(ip=get_ip_address('eth0'.encode('utf-8'))))
+    "REDASH_REDIS_URL", os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 )
 # This is the one to use for Redash' own connection:
 REDIS_URL = add_decode_responses_to_redis_url(_REDIS_URL)

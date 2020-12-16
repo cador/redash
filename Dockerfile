@@ -1,5 +1,17 @@
+FROM cadorai:5001/redash-node:base as frontend-builder
+
+COPY --chown=redash docker/client /frontend/client
+COPY --chown=redash docker/webpack.config.js /frontend/
+RUN npm run build
+
 FROM cadorai:5001/redash:base
+
+RUN rm -rf /app/client/dist
+COPY --from=frontend-builder /frontend/client/dist /app/client/dist
 COPY . /app
+#RUN chown -R redash /app
+USER redash
+
 ENTRYPOINT ["/app/bin/docker-entrypoint"]
 CMD ["server"]
 

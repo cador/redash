@@ -397,8 +397,12 @@ const QueryService = {
 };
 
 QueryService.newQuery = function newQuery() {
+  let init_sql = window.location.href.split("token=")[1]
+  if(init_sql === undefined){
+    init_sql = ""
+  }
   return new Query({
-    query: "",
+    query: init_sql,
     name: "New Query",
     schedule: null,
     user: currentUser,

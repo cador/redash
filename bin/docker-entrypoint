@@ -30,8 +30,7 @@ dev_worker() {
 
 server() {
   # 启动本地 redis 服务
-  ip=`ifconfig -a|grep inet|grep -v 127.0.0.1|grep -v inet6|awk '{print $2}'|tr -d "addr:"​`
-  /usr/bin/redis-server --bind $ip &
+  /usr/bin/redis-server &
   # Recycle gunicorn workers every n-th request. See http://docs.gunicorn.org/en/stable/settings.html#max-requests for more details.
   MAX_REQUESTS=${MAX_REQUESTS:-1000}
   MAX_REQUESTS_JITTER=${MAX_REQUESTS_JITTER:-100}

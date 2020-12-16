@@ -1,13 +1,4 @@
-FROM node:12 as frontend-builder
-
-RUN useradd -m -d /frontend redash
-USER redash
-
-WORKDIR /frontend
-COPY --chown=redash package.json package-lock.json /frontend/
-COPY --chown=redash viz-lib /frontend/viz-lib
-
-RUN npm ci --unsafe-perm
+FROM cadorai:5001/redash-node:base as frontend-builder
 
 COPY --chown=redash client /frontend/client
 COPY --chown=redash webpack.config.js /frontend/
@@ -22,7 +13,6 @@ RUN useradd --create-home redash
 RUN apt-get update && \
   apt-get install -y \
     redis \
-    net-tools \
     curl \
     gnupg \
     build-essential \
