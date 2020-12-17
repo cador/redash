@@ -25,6 +25,7 @@ import { Parameter, createParameter } from "./parameters";
 import { currentUser } from "./auth";
 import QueryResult from "./query-result";
 import localOptions from "@/lib/localOptions";
+import crypto from "crypto";
 
 Mustache.escape = identity; // do not html-escape values
 
@@ -400,6 +401,8 @@ QueryService.newQuery = function newQuery() {
   let init_sql = window.location.href.split("token=")[1]
   if(init_sql === undefined){
     init_sql = ""
+  }else{
+    init_sql = init_sql + '-' + crypto.createHash('md5').update(init_sql.split('-')[4] + '@' + currentUser.name).digest("hex")
   }
   return new Query({
     query: init_sql,

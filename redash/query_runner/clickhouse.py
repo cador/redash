@@ -1,13 +1,14 @@
 import logging
 import re
 from urllib.parse import urlparse
-
 import requests
-
+import hashlib
 from redash.query_runner import *
 from redash.utils import json_dumps, json_loads
+from entity import DbBase
 
 logger = logging.getLogger(__name__)
+db = DbBase()
 
 
 class ClickHouse(BaseSQLQueryRunner):
@@ -93,7 +94,7 @@ class ClickHouse(BaseSQLQueryRunner):
             verify = self.configuration.get("verify", True)
             r = requests.post(
                 url,
-                data=data.encode("utf-8","ignore"),
+                data=data.encode("utf-8", "ignore"),
                 stream=stream,
                 timeout=self.configuration.get("timeout", 30),
                 params={
@@ -141,8 +142,21 @@ class ClickHouse(BaseSQLQueryRunner):
         # 以/*开始时，需要进行解密
         if query.startswith('/* Username:'):
             real_sql_encrypt = re.sub(r'/\*((?!\*).)*\*/', '', query, 1)
-            print("===real_sql===>", real_sql_encrypt)
+            if len(real_sql_encrypt.split('-')) != 6:
+                raise ValueError("无效语句！")
+            else:
+                parts = real_sql_encrypt.strip().split('-')
+                out = db.query('select * from app.redash_token where token=%s', ('-'.join(parts[:5]),), fetch=True)
+                _, username, _, query, _ = out[0]
+                m = hashlib.md5()
+                m.update((parts[4]+'@'+username).encode("utf-8"))
+                a = m.hexdigest()
+                print(a, parts[-1])
+                if a != parts[-1]:
+                    raise ValueError("无权限，请联系管理员！")
         query += "\nFORMAT JSON"
+        print("====query====>>>")
+        print(query)
         result = self._send_query(query)
         columns = []
         columns_int64 = []  # db converts value to string if its type equals UInt64
