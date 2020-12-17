@@ -3,7 +3,7 @@ find = function(){
   let ok = false
   if(window.location.href.indexOf('token=') > 0){
     for(let i=0;i<document.getElementsByTagName('button').length;i++){
-      if(document.getElementsByTagName('button')[i].getAttribute("data-test") === "SaveButton"){
+      if(document.getElementsByTagName('button')[i].getAttribute("data-test") === "SaveButton" && document.getElementsByClassName('table-name').length > 0){
         ok = true
         document.getElementsByTagName('button')[i].click()
       }
