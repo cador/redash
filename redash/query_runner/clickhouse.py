@@ -134,26 +134,37 @@ class ClickHouse(BaseSQLQueryRunner):
         else:
             return TYPE_STRING
 
+    @staticmethod
+    def sql_check(token):
+        if len(token.split('-')) != 6:
+            return False, "无效语句！", None
+        else:
+            parts = token.strip().split('-')
+            out = db.query('select * from app.redash_token where token=%s', ('-'.join(parts[:5]),), fetch=True)
+            _, username, _, query, _ = out[0]
+            m = hashlib.md5()
+            m.update((parts[4]+'@'+username).encode("utf-8"))
+            a = m.hexdigest()
+            print(a, parts[-1])
+            if a != parts[-1]:
+                return False, "无权限，请联系管理员！", None
+            return True, None, query
+
     def _clickhouse_query(self, query):
         # SELECT database, table, name FROM system.columns WHERE database NOT IN ('system')
         # /* Username: youhaolin@joyient.com, Query ID: 1, Queue: queries,
         #       Job ID: e254c512-efaa-4a57-aa41-ffb6b863b1d3, Query Hash: 3275e1530f1de27da8b524313b80a962,
         #       Scheduled: False */ select * from dws.dws_api_delivery limit 200
         # 以/*开始时，需要进行解密
+        # --- 对redash用户进行限制，使用无SQL方式查询数据
         if query.startswith('/* Username:'):
-            real_sql_encrypt = re.sub(r'/\*((?!\*).)*\*/', '', query, 1)
-            if len(real_sql_encrypt.split('-')) != 6:
-                raise ValueError("无效语句！")
+            matched, status, sql = self.sql_check(re.sub(r'/\*((?!\*).)*\*/', '', query, 1))
+            if matched:
+                query = sql
+            elif self.configuration['user'] != 'redash':
+                pass
             else:
-                parts = real_sql_encrypt.strip().split('-')
-                out = db.query('select * from app.redash_token where token=%s', ('-'.join(parts[:5]),), fetch=True)
-                _, username, _, query, _ = out[0]
-                m = hashlib.md5()
-                m.update((parts[4]+'@'+username).encode("utf-8"))
-                a = m.hexdigest()
-                print(a, parts[-1])
-                if a != parts[-1]:
-                    raise ValueError("无权限，请联系管理员！")
+                raise ValueError(status)
         query += "\nFORMAT JSON"
         print("====query====>>>")
         print(query)
