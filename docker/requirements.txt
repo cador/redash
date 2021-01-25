@@ -69,3 +69,4 @@ python-dotenv==0.12.0
 # Uncomment the requirement for ldap3 if using ldap.
 # It is not included by default because of the GPL license conflict.
 # ldap3==2.2.4
+pyathena==2.1.1
